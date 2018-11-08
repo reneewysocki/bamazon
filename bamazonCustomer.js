@@ -1,5 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+require("dotenv").config();
 
 var connection = mysql.createConnection({
   host: "localhost",
@@ -11,7 +12,7 @@ var connection = mysql.createConnection({
   user: "root",
 
   // Your password
-  password: "",
+  password: process.env.SQL_PASS,
   database: "bamazon"
 });
 
@@ -73,6 +74,7 @@ function purchase(ID, quantity) {
       var totalCost = result[0].price * quantity;
 
       console.log("Your total is $" + totalCost + ". Thank you for your purchase!");
+      console.log("------------------");
 
       //Update quantity in the DB
       connection.query("UPDATE products SET stock_quantity = stock_quantity - " + quantity + " WHERE id = " + ID);
