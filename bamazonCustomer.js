@@ -43,9 +43,7 @@ function chooseItem() {
       validate: function(value) {
           if (isNaN(value) === false) {
               return true;
-          } else {
-              return false;
-          }
+          } 
       }
   }, {
       name: "quantity",

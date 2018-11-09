@@ -1,6 +1,5 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-const menu = require('inquirer-menu');
 require("dotenv").config();
 
 var connection = mysql.createConnection({
@@ -20,40 +19,46 @@ var connection = mysql.createConnection({
 connection.connect(function (err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId + "\n");
-    manageMenu();
+    displayMenu();
 });
 
 
-function manageMenu() {
-    return {
-        message: 'What would you like to do?',
-        choices: {
-            View_Products: function () {
-                viewProducts();
-            },
-            View_Low_Inventory: function () {
-                lowInventory();
-            },
-            Add_Inventory: function () {
-                addInventory();
-            },
-            Add_New_Product: function () {
-                addProduct();
-            },
-        }
-    };
+function displayMenu() {
+    inquirer
+        .prompt([
+            {
+                type: 'list',
+                name: 'name',
+                message: 'What do you want to do?',
+                choices: [
+                    'View Products for Sale',
+                    'View Low Inventory',
+                    'Add to Inventory',
+                    'Add New Product',
+                ]
+            }
+        ])
+        .then(answer => {
+            var choice = answer.name;
+            switch (choice) {
+                case 'View Products for Sale':
+                    viewProducts();
+                    break;
 
+                case 'View Low Inventory':
+                    lowInventory();
+                    break;
+
+                case 'Add to Inventory':
+                    addInventory();
+                    break;
+
+                case 'Add New Product':
+                    addProduct();
+                    break;
+            }
+        });
 };
-
-
-menu(manageMenu)
-    .then(function () {
-        console.log('Thank You!');
-    })
-    .catch(function (err) {
-        console.log(err.stack);
-    });
-
 
 function viewProducts() {
     connection.query("SELECT * FROM products ", function (err, result) {
@@ -63,6 +68,7 @@ function viewProducts() {
             console.log(result[i].id + ". " + result[i].product_name.toString() + " - $" + result[i].price + " In Stock: " + result[i].stock_quantity);
         }
     });
+    displayMenu();
 };
 
 function lowInventory() {
@@ -75,10 +81,11 @@ function lowInventory() {
             }
         }
     });
+    displayMenu();
 };
 
 function addInventory() {
-    connection.query("SELECT * FROM products ", function (err, result) {
+    connection.query("SELECT * FROM products", function (err, result) {
         if (err) throw err;
         console.log("\n ADD INVENTORY \n")
         //item prompt 
@@ -105,68 +112,78 @@ function addInventory() {
                 }
             }
         }]).then(function (answers) {
-            // var updateID = answers.itemID;
-            // var updateQuantity = answers.quantity;
-            connection.query("UPDATE products SET stock_quantity = " + answers.quantity + " WHERE id = " + answers.itemID);
+            var updateID = answers.itemID;
+            var updateQuantity = answers.quantity;
+            connection.query("UPDATE products SET stock_quantity = " + updateQuantity + " WHERE id = " + updateID);
+            updateConfirmation(updateID);
         });
     });
 };
 
-
+function updateConfirmation(updateID) {
+    connection.query("SELECT * FROM products WHERE id =" + updateID, function (err, result) {
+        if (err) throw err;
+        console.log("Inventory has been updated.")
+        for (var i = 0; i < result.length; i++) {
+            console.log(result[i].id + ". " + result[i].product_name.toString() + " In Stock: " + result[i].stock_quantity);
+        }
+    });
+    displayMenu();
+};
 
 function addProduct() {
-    connection.query("SELECT * FROM products ", function (err, result) {
-        if (err) throw err;
-        console.log("\n ADD PRODUCT \n")
-        //item prompt 
-        inquirer.prompt([{
-                name: "product_name",
-                type: "input",
-                message: "What is the name of the product you would like to add?",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+    inquirer.prompt(newProductQs)
+        .then(function (answers) {
+            connection.query(
+                "INSERT INTO products SET ?",
+                {
+                  product_name: answers.product_name,
+                  department_name: answers.department,
+                  price: answers.price,
+                  stock_quantity: answers.quantity
                 },
-                name: "department",
-                type: "input",
-                message: "What is the name of the product you would like to add?",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                },
-                name: "price",
-                type: "input",
-                message: "What is the name of the product you would like to add?",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                },
-                name: "quantity",
-                type: "input",
-                message: "What is the name of the product you would like to add?",
-                validate: function (value) {
-                    if (isNaN(value) === false) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                },
-            }]).then(function (answers) {
-                // var updateID = answers.itemID;
-                // var updateQuantity = answers.quantity;
-                connection.query("INSERT INTO products (product_name, department_name, price, quantity) VALUES (" + answers.product_name, answers.department, answers.price, answers.quantity + ")");
-                
-            });
-    });
+                function(err) {
+                  if (err) throw err;
+                  console.log("Your item was created successfully!");
+                  // re-prompt the user for if they want to bid or post
+                  displayMenu();
+                }
+              );
+            });      
 };
 
 
+var newProductQs = [
+    {
+        name: "product_name",
+        type: "input",
+        message: "What is the name of the product you would like to add?",
+        validate: function (value) {
+            return value !== '';
+        },
+    },
+    {
+        name: "department",
+        type: "input",
+        message: "What is the department?",
+        validate: function (value) {
+            return value !== '';
+        },
+    },
+    {
+        name: "price",
+        type: "input",
+        message: "What is the item price?",
+        validate: function (value) {
+            return value !== '';
+        },
+    },
+    {
+        name: "quantity",
+        type: "input",
+        message: "What is the item quantity?",
+        validate: function (value) {
+            return value !== '';
+        },
+    },
+]
