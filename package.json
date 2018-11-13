@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "cli-table": "^0.3.1",
+    "console.table": "^0.10.0",
     "dotenv": "^6.1.0",
     "inquirer": "^6.2.0",
     "mysql": "^2.16.0",

@@ -1,5 +1,6 @@
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+// var cTable = require('console.table');
 require("dotenv").config();
 
 var connection = mysql.createConnection({
@@ -16,6 +17,7 @@ var connection = mysql.createConnection({
   database: "bamazon"
 });
 
+
 connection.connect(function (err) {
   if (err) throw err;
   console.log("connected as id " + connection.threadId + "\n");
@@ -26,14 +28,15 @@ function chooseItem() {
   connection.query("SELECT * FROM products", function (err, result) {
     if (err) throw err;
 
+
     //lists items 
     console.log("HORSEY TACK TRADER");
     console.log("Items for Sale");
     console.log("------------------");
     for (var i = 0; i < result.length; i++) {
-      console.log(result[i].id + ". " + result[i].product_name.toString() + " - $" + result[i].price);
+      console.log("id:" + result[i].id + " - " + result[i].product_name.toString() + "- Price: $" + result[i].price);
     }
-    console.log("------------------");
+    // console.log("------------------");
 
     //item prompt 
     inquirer.prompt([{
